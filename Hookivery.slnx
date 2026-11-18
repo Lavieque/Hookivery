@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hookivery.Api/Hookivery.Api.csproj" />
+    <Project Path="src/Hookivery.Application/Hookivery.Application.csproj" />
+    <Project Path="src/Hookivery.Domain/Hookivery.Domain.csproj" />
+    <Project Path="src/Hookivery.Infrastructure/Hookivery.Infrastructure.csproj" />
+    <Project Path="src/Hookivery.Worker/Hookivery.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hookivery.ArchitectureTests/Hookivery.ArchitectureTests.csproj" />
+    <Project Path="tests/Hookivery.IntegrationTests/Hookivery.IntegrationTests.csproj" />
+    <Project Path="tests/Hookivery.UnitTests/Hookivery.UnitTests.csproj" />
+  </Folder>
+</Solution>
