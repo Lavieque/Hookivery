@@ -18,4 +18,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hookivery.Infrastructure\Hookivery.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Hookivery.Api\Hookivery.Api.csproj" />
+  </ItemGroup>
+
 </Project>

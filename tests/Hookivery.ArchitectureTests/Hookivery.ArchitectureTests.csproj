@@ -18,4 +18,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hookivery.Domain\Hookivery.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Hookivery.Application\Hookivery.Application.csproj" />
+    <ProjectReference Include="..\..\src\Hookivery.Infrastructure\Hookivery.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Hookivery.Api\Hookivery.Api.csproj" />
+    <ProjectReference Include="..\..\src\Hookivery.Worker\Hookivery.Worker.csproj" />
+  </ItemGroup>
+
 </Project>

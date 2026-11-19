@@ -11,4 +11,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Hookivery.Application\Hookivery.Application.csproj" />
+    <ProjectReference Include="..\Hookivery.Infrastructure\Hookivery.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
