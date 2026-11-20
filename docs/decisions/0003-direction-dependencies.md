@@ -80,8 +80,7 @@ Associated decisions:
 3. **`Api` and `Worker` reference Infrastructure exclusively for composition**, at startup. No controller,
    middleware or processor uses Infrastructure types.
 4. **Abstractions are created when the task that requires them arrives**, not ahead of time. The list of foreseen
-   abstractions belongs in `docs/architecture/README.md` as a map, not as a contract — a document still to be
-   written as part of TASK-003.
+   abstractions belongs in `docs/architecture/README.md` as a map, not as a contract.
 
 ## Consequences
 
