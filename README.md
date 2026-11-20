@@ -1,23 +1,24 @@
 # Hookivery
 
-Plataforma de entrega de webhooks (Webhook Delivery Platform) em C# / .NET 10.
-Recebe eventos de sistemas emissores, persiste-os em PostgreSQL, processa-os de forma assíncrona e entrega-os
-a destinos externos com retries, idempotência, Dead Letter Queue, Outbox Pattern, observabilidade e deployment em Docker.
+Webhook delivery platform built with C# / .NET 10.
+It receives events from producer systems, persists them in PostgreSQL, processes them asynchronously and delivers
+them to external destinations with retries, idempotency, a Dead Letter Queue, the Outbox Pattern, observability and
+Docker deployment.
 
-> **Estado:** em desenvolvimento — fundação da solução.
+> **Status:** in development — solution foundation.
 
-## Requisitos
+## Requirements
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- Docker (necessário a partir da configuração do PostgreSQL)
+- Docker (required from the PostgreSQL setup onwards)
 
-## Começar
+## Getting started
 
 ```bash
 git clone https://github.com/Lavieque/Hookivery.git
 cd Hookivery
 
-# Configuração local (os appsettings.json não são versionados)
+# Local configuration (appsettings.json files are not versioned)
 cp src/Hookivery.Api/appsettings.example.json src/Hookivery.Api/appsettings.json
 cp src/Hookivery.Worker/appsettings.example.json src/Hookivery.Worker/appsettings.json
 
@@ -26,41 +27,41 @@ dotnet build Hookivery.slnx
 dotnet test Hookivery.slnx
 ```
 
-Executar localmente:
+Run locally:
 
 ```bash
-# API — http://localhost:5034 (perfil http) ou https://localhost:7065 (perfil https)
+# API — http://localhost:5034 (http profile) or https://localhost:7065 (https profile)
 dotnet run --project src/Hookivery.Api
 
 # Worker
 dotnet run --project src/Hookivery.Worker
 ```
 
-Em ambiente `Development`, a API expõe o documento OpenAPI em `/openapi/v1.json`.
+In the `Development` environment, the API exposes the OpenAPI document at `/openapi/v1.json`.
 
-## Estrutura
+## Structure
 
 ```text
 Hookivery/
 ├── src/
-│   ├── Hookivery.Api/               # ASP.NET Core Web API: receção de eventos e gestão
-│   ├── Hookivery.Application/       # Casos de uso, orquestração e abstrações (ports)
-│   ├── Hookivery.Domain/            # Entidades e regras de negócio, sem dependências externas
-│   ├── Hookivery.Infrastructure/    # Persistência (EF Core / PostgreSQL), cliente HTTP, integrações
-│   └── Hookivery.Worker/            # Processamento assíncrono e entrega dos webhooks
+│   ├── Hookivery.Api/               # ASP.NET Core Web API: event ingestion and management
+│   ├── Hookivery.Application/       # Use cases, orchestration and abstractions (ports)
+│   ├── Hookivery.Domain/            # Entities and business rules, no external dependencies
+│   ├── Hookivery.Infrastructure/    # Persistence (EF Core / PostgreSQL), HTTP client, integrations
+│   └── Hookivery.Worker/            # Asynchronous processing and webhook delivery
 ├── tests/
-│   ├── Hookivery.UnitTests/         # Testes unitários (Domain, Application)
-│   ├── Hookivery.IntegrationTests/  # Testes com dependências reais (ex.: PostgreSQL)
-│   └── Hookivery.ArchitectureTests/ # Verificação das regras de dependência entre camadas
+│   ├── Hookivery.UnitTests/         # Unit tests (Domain, Application)
+│   ├── Hookivery.IntegrationTests/  # Tests against real dependencies (e.g. PostgreSQL)
+│   └── Hookivery.ArchitectureTests/ # Enforcement of the dependency rules between layers
 ├── docs/
 │   └── decisions/                   # Architecture Decision Records (ADRs)
-├── .editorconfig                    # Estilo de código e regras de nomenclatura
-├── Directory.Build.props            # Propriedades MSBuild comuns (nullable, analyzers)
-├── Directory.Packages.props         # Versões centralizadas dos pacotes NuGet
-└── Hookivery.slnx                   # Solução
+├── .editorconfig                    # Code style and naming rules
+├── Directory.Build.props            # Shared MSBuild properties (nullable, analyzers)
+├── Directory.Packages.props         # Centralized NuGet package versions
+└── Hookivery.slnx                   # Solution
 ```
 
-### Direção das dependências (pretendida)
+### Dependency direction (intended)
 
 ```text
 Api ─────┐
@@ -69,43 +70,48 @@ Worker ──┤
          └──► Infrastructure ──► Application
 ```
 
-- `Domain` não depende de nenhum outro projeto nem de EF Core.
-- `Application` depende apenas de `Domain`.
-- `Infrastructure` implementa as abstrações definidas em `Application`.
-- `Api` e `Worker` são *composition roots*: ligam as implementações através de injeção de dependências.
+- `Domain` depends on no other project and not on EF Core.
+- `Application` depends only on `Domain`.
+- `Infrastructure` implements the abstractions defined in `Application`.
+- `Api` and `Worker` are *composition roots*: they wire the implementations through dependency injection.
 
-## Convenções
+## Conventions
 
-### Nomenclatura
+### Language
 
-Definida no `.editorconfig`:
+All versioned content is written in English: code, comments, identifiers, documentation, ADRs, commit messages,
+branch names, issues and pull requests.
 
-| Elemento | Convenção | Exemplo |
+### Naming
+
+Defined in `.editorconfig`:
+
+| Element | Convention | Example |
 |---|---|---|
-| Projetos | `Hookivery.<Camada>` | `Hookivery.Domain` |
-| Namespaces | Seguem a pasta, declaração *file-scoped* | `namespace Hookivery.Worker;` |
-| Tipos, métodos, propriedades, eventos, enums | `PascalCase` | `DeliveryAttempt` |
-| Interfaces | Prefixo `I` + `PascalCase` | `IDeliveryRepository` |
-| Parâmetros genéricos | Prefixo `T` + `PascalCase` | `TEntity` |
-| Campos privados/protegidos | `_camelCase` | `_logger` |
-| Campos estáticos privados | `s_camelCase` | `s_cache` |
-| Constantes e campos `static readonly` | `PascalCase` | `MaxAttempts` |
-| Variáveis locais e parâmetros | `camelCase` | `eventId` |
-| Métodos assíncronos | Sufixo `Async` e `CancellationToken` | `DeliverAsync(..., ct)` |
+| Projects | `Hookivery.<Layer>` | `Hookivery.Domain` |
+| Namespaces | Match the folder, *file-scoped* declaration | `namespace Hookivery.Worker;` |
+| Types, methods, properties, events, enums | `PascalCase` | `DeliveryAttempt` |
+| Interfaces | `I` prefix + `PascalCase` | `IDeliveryRepository` |
+| Generic parameters | `T` prefix + `PascalCase` | `TEntity` |
+| Private/protected fields | `_camelCase` | `_logger` |
+| Private static fields | `s_camelCase` | `s_cache` |
+| Constants and `static readonly` fields | `PascalCase` | `MaxAttempts` |
+| Local variables and parameters | `camelCase` | `eventId` |
+| Asynchronous methods | `Async` suffix and `CancellationToken` | `DeliverAsync(..., ct)` |
 
-### Código
+### Code
 
-- `Nullable` e `ImplicitUsings` ativos em todos os projetos (`Directory.Build.props`).
-- Analyzers: Meziantou.Analyzer, SonarAnalyzer.CSharp e Roslynator; estilo validado no build (`EnforceCodeStyleInBuild`).
-- Em CI (`ContinuousIntegrationBuild=true`), os warnings são tratados como erros.
-- Versões de pacotes geridas apenas em `Directory.Packages.props` (Central Package Management);
-  os `.csproj` não indicam versões.
+- `Nullable` and `ImplicitUsings` enabled in every project (`Directory.Build.props`).
+- Analyzers: Meziantou.Analyzer, SonarAnalyzer.CSharp and Roslynator; style validated at build time (`EnforceCodeStyleInBuild`).
+- In CI (`ContinuousIntegrationBuild=true`), warnings are treated as errors.
+- Package versions managed only in `Directory.Packages.props` (Central Package Management);
+  the `.csproj` files declare no versions.
 
 ### Git
 
-- Branches: `main` (estável), `develop` (integração), `feature/TASK-XXX-descricao`.
+- Branches: `main` (stable), `develop` (integration), `feature/TASK-XXX-description`.
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/) — `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
 
-## Decisões de arquitetura
+## Architecture decisions
 
-As decisões relevantes são registadas como ADR em [`docs/decisions/`](docs/decisions/).
+Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/).
