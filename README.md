@@ -10,7 +10,7 @@ Docker deployment.
 ## Requirements
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- Docker (required from the PostgreSQL setup onwards)
+- Docker, with Compose (PostgreSQL runs in a container)
 
 ## Getting started
 
@@ -18,14 +18,46 @@ Docker deployment.
 git clone https://github.com/Lavieque/Hookivery.git
 cd Hookivery
 
-# Local configuration (appsettings.json files are not versioned)
+# Local configuration (appsettings.json and .env are not versioned)
 cp src/Hookivery.Api/appsettings.example.json src/Hookivery.Api/appsettings.json
 cp src/Hookivery.Worker/appsettings.example.json src/Hookivery.Worker/appsettings.json
+cp .env.example .env   # then set POSTGRES_PASSWORD to a value of your own
+
+docker compose up -d
 
 dotnet restore Hookivery.slnx
 dotnet build Hookivery.slnx
+```
+
+## Database
+
+PostgreSQL runs as the `postgres` service in [`docker-compose.yml`](docker-compose.yml), published on
+**`127.0.0.1:5437`** (loopback only) and mapped to port 5432 inside the container. Credentials come from `.env`;
+the service refuses to start if a variable is missing.
+
+```bash
+docker compose ps          # the service must reach "healthy", not just "running"
+docker compose logs postgres
+docker compose down        # stops the container, keeps the data
+```
+
+Data lives in the named volume `hookivery-pgdata`. `docker compose down -v` also removes that volume and deletes
+the database, with no confirmation and no way back.
+
+The schema is owned by EF Core migrations, not by init scripts.
+
+### Running the tests
+
+The integration tests connect to the running container through the `HOOKIVERY_DB` environment variable:
+
+```bash
+# PowerShell
+$env:HOOKIVERY_DB = "Host=localhost;Port=5437;Database=hookivery;Username=hookivery;Password=<yours>"
+
 dotnet test Hookivery.slnx
 ```
+
+Without that variable the integration tests fail with `Set HOOKIVERY_DB before running this test.`
 
 Run locally:
 
@@ -56,8 +88,10 @@ Hookivery/
 ├── docs/
 │   └── decisions/                   # Architecture Decision Records (ADRs)
 ├── .editorconfig                    # Code style and naming rules
+├── .env.example                     # Template for the database credentials in .env
 ├── Directory.Build.props            # Shared MSBuild properties (nullable, analyzers)
 ├── Directory.Packages.props         # Centralized NuGet package versions
+├── docker-compose.yml               # PostgreSQL service
 └── Hookivery.slnx                   # Solution
 ```
 
