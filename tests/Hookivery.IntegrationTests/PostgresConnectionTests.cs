@@ -7,8 +7,9 @@ public sealed class PostgresConnectionTests
     [Fact]
     public async Task ConnectsToPostgresAsync()
     {
-        var connectionString = Environment.GetEnvironmentVariable("HOOKIVERY_DB")
-            ?? throw new InvalidOperationException("Set HOOKIVERY_DB before running this test.");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Hookivery")
+            ?? throw new InvalidOperationException("Set ConnectionStrings__Hookivery before running this test.");
+
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(CancellationToken.None);

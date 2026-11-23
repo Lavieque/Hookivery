@@ -18,16 +18,28 @@ Docker deployment.
 git clone https://github.com/Lavieque/Hookivery.git
 cd Hookivery
 
-# Local configuration (appsettings.json and .env are not versioned)
-cp src/Hookivery.Api/appsettings.example.json src/Hookivery.Api/appsettings.json
-cp src/Hookivery.Worker/appsettings.example.json src/Hookivery.Worker/appsettings.json
+# Local configuration (.env, appsettings.json and appsettings.Development.json are not versioned)
 cp .env.example .env   # then set POSTGRES_PASSWORD to a value of your own
+cp src/Hookivery.Api/appsettings.example.json src/Hookivery.Api/appsettings.Development.json
+cp src/Hookivery.Worker/appsettings.example.json src/Hookivery.Worker/appsettings.Development.json
+# then make the password in ConnectionStrings:Hookivery match POSTGRES_PASSWORD
 
 docker compose up -d
 
 dotnet restore Hookivery.slnx
 dotnet build Hookivery.slnx
 ```
+
+## Configuration
+
+| Setting | Where | Notes |
+|---|---|---|
+| `ConnectionStrings:Hookivery` | `appsettings.Development.json`, or the `ConnectionStrings__Hookivery` environment variable | Required. The API fails at startup, not on the first request, when it is missing. |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `.env` | Read by `docker-compose.yml`. The container refuses to start if one is missing. |
+
+`appsettings.json` holds no connection string. It is the base file for every environment, so a value placed there
+follows the application into production. Per-environment values belong in `appsettings.<Environment>.json` or in
+the environment itself.
 
 ## Database
 
@@ -44,22 +56,26 @@ docker compose down        # stops the container, keeps the data
 Data lives in the named volume `hookivery-pgdata`. `docker compose down -v` also removes that volume and deletes
 the database, with no confirmation and no way back.
 
-The schema is owned by EF Core migrations, not by init scripts.
+## Migrations
 
-### Running the tests
+The schema is owned by EF Core migrations, not by init scripts. `HookiveryDbContext` lives in
+`Hookivery.Infrastructure`, and `Hookivery.Api` is the startup project that supplies its configuration:
 
-The integration tests connect to the running container through the `HOOKIVERY_DB` environment variable:
+```powershell
+dotnet tool update --global dotnet-ef   # or install --global, the first time
 
-```bash
-# PowerShell
-$env:HOOKIVERY_DB = "Host=localhost;Port=5437;Database=hookivery;Username=hookivery;Password=<yours>"
+$env:ASPNETCORE_ENVIRONMENT = "Development"
 
-dotnet test Hookivery.slnx
+dotnet ef dbcontext info --project src/Hookivery.Infrastructure --startup-project src/Hookivery.Api
 ```
 
-Without that variable the integration tests fail with `Set HOOKIVERY_DB before running this test.`
+`dotnet ef` does not read `launchSettings.json`. Without `ASPNETCORE_ENVIRONMENT=Development` the host starts as
+`Production`, never loads `appsettings.Development.json`, and the command fails with
+`Connection string 'Hookivery' is not configured.`
 
-Run locally:
+No migration exists yet: the first one is created together with the initial entity mappings.
+
+## Running locally
 
 ```bash
 # API — http://localhost:5034 (http profile) or https://localhost:7065 (https profile)
@@ -70,6 +86,19 @@ dotnet run --project src/Hookivery.Worker
 ```
 
 In the `Development` environment, the API exposes the OpenAPI document at `/openapi/v1.json`.
+
+## Running the tests
+
+The integration tests reach the running container through `ConnectionStrings__Hookivery` — the same name the
+application's configuration uses:
+
+```powershell
+$env:ConnectionStrings__Hookivery = "Host=localhost;Port=5437;Database=hookivery;Username=hookivery;Password=<yours>"
+
+dotnet test Hookivery.slnx
+```
+
+Without that variable the integration tests fail with `Set ConnectionStrings__Hookivery before running this test.`
 
 ## Structure
 
@@ -86,6 +115,7 @@ Hookivery/
 │   ├── Hookivery.IntegrationTests/  # Tests against real dependencies (e.g. PostgreSQL)
 │   └── Hookivery.ArchitectureTests/ # Enforcement of the dependency rules between layers
 ├── docs/
+│   ├── architecture/                # Layer responsibilities and dependency rules
 │   └── decisions/                   # Architecture Decision Records (ADRs)
 ├── .editorconfig                    # Code style and naming rules
 ├── .env.example                     # Template for the database credentials in .env
@@ -143,7 +173,7 @@ Defined in `.editorconfig`:
 
 ### Git
 
-- Branches: `main` (stable), `develop` (integration), `feature/TASK-XXX-description`.
+- Branches: `main` (stable) and `feature/TASK-XXX-description`.
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/) — `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
 
 ## Architecture decisions
