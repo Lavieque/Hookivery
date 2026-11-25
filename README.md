@@ -5,7 +5,8 @@ It receives events from producer systems, persists them in PostgreSQL, processes
 them to external destinations with retries, idempotency, a Dead Letter Queue, the Outbox Pattern, observability and
 Docker deployment.
 
-> **Status:** in development — solution foundation.
+> **Status:** in development — solution foundation, PostgreSQL, EF Core and the domain model are in place;
+> persistence mappings and the first migration are next.
 
 ## Requirements
 
@@ -75,6 +76,34 @@ dotnet ef dbcontext info --project src/Hookivery.Infrastructure --startup-projec
 
 No migration exists yet: the first one is created together with the initial entity mappings.
 
+## Domain model
+
+`Hookivery.Domain` holds the entities and their rules, with no dependency on EF Core or any other package.
+Entities are created through factory methods (`Register`, `Receive`, `Create`, `Record`) that validate their
+input, so an invalid instance cannot exist. Identifiers are UUID v7 (`Guid.CreateVersion7`), time-ordered so they
+index well.
+
+| Entity | Role | States |
+|---|---|---|
+| `Source` | A producer system that sends events, with its signing secret | `IsActive` |
+| `Event` | An event received from a source; the payload is kept as received | `EventStatus`: `Pending`, `Dispatched`, `NoDestinations` |
+| `Destination` | An external endpoint of one source, with its URL, secret, delivery settings and subscribed event types | `IsActive` |
+| `Delivery` | The delivery of one event to one destination | `DeliveryStatus`: `Pending`, `Succeeded`, `Failed` |
+| `DeliveryAttempt` | One HTTP attempt of a delivery, with its outcome, status code and truncated response | `AttemptOutcome`: `Succeeded`, `HttpError`, `Timeout`, `NetworkError` |
+
+Rules worth knowing before using the model:
+
+- `Event.Status` tracks fan-out only (creating the deliveries), never the delivery outcome: an event sent to
+  several destinations has no single outcome. Failures are read from `Delivery`.
+- A destination receives an event only when it belongs to the same source, is active and subscribes to the event
+  type. An empty subscription list means no event types, not all of them.
+- Event types are normalized to lowercase on both sides of the match (`EventTypeName.Normalize`).
+- Secrets (`SigningSecret`) need at least 32 characters, and `ToString()` masks the value so it does not leak
+  into logs.
+- `Delivery` validates an attempt before changing any state, so a rejected attempt leaves the entity unchanged.
+
+The reasons behind these rules are in [ADR-0005](docs/decisions/0005-event-fanout-and-subscription.md).
+
 ## Running locally
 
 ```bash
@@ -88,6 +117,13 @@ dotnet run --project src/Hookivery.Worker
 In the `Development` environment, the API exposes the OpenAPI document at `/openapi/v1.json`.
 
 ## Running the tests
+
+The unit tests (domain rules) and the architecture tests (dependency rules between layers) need no database:
+
+```bash
+dotnet test tests/Hookivery.UnitTests
+dotnet test tests/Hookivery.ArchitectureTests
+```
 
 The integration tests reach the running container through `ConnectionStrings__Hookivery` — the same name the
 application's configuration uses:
@@ -178,4 +214,8 @@ Defined in `.editorconfig`:
 
 ## Architecture decisions
 
-Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/).
+Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/):
+
+- [ADR-0003 — Dependency direction between layers](docs/decisions/0003-direction-dependencies.md)
+- [ADR-0004 — Transactional semantics and data access ports](docs/decisions/0004-transactional-semantics.md)
+- [ADR-0005 — Event fan-out and destination subscription](docs/decisions/0005-event-fanout-and-subscription.md)
