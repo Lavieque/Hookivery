@@ -5,8 +5,8 @@ It receives events from producer systems, persists them in PostgreSQL, processes
 them to external destinations with retries, idempotency, a Dead Letter Queue, the Outbox Pattern, observability and
 Docker deployment.
 
-> **Status:** in development — solution foundation, PostgreSQL, EF Core and the domain model are in place;
-> persistence mappings and the first migration are next.
+> **Status:** in development — solution foundation, PostgreSQL, EF Core, the domain model and its persistence
+> mappings with the initial migration are in place; the source management API is next.
 
 ## Requirements
 
@@ -74,7 +74,21 @@ dotnet ef dbcontext info --project src/Hookivery.Infrastructure --startup-projec
 `Production`, never loads `appsettings.Development.json`, and the command fails with
 `Connection string 'Hookivery' is not configured.`
 
-No migration exists yet: the first one is created together with the initial entity mappings.
+Migrations live in `src/Hookivery.Infrastructure/Persistence/Migrations/`. Apply them with:
+
+```powershell
+dotnet ef database update --project src/Hookivery.Infrastructure --startup-project src/Hookivery.Api
+```
+
+After changing an entity configuration, add a migration:
+
+```powershell
+dotnet ef migrations add <Name> --project src/Hookivery.Infrastructure --startup-project src/Hookivery.Api --output-dir Persistence/Migrations
+```
+
+The integration test `ModelHasNoPendingChanges` fails when the model and the last migration differ. It needs no
+database. Mapping choices (payload as text, enums as strings, check constraints) are recorded in
+[ADR-0006](docs/decisions/0006-persistence-mapping.md).
 
 ## Domain model
 
@@ -135,6 +149,8 @@ dotnet test Hookivery.slnx
 ```
 
 Without that variable the integration tests fail with `Set ConnectionStrings__Hookivery before running this test.`
+The persistence tests apply every pending migration to that database before they run, so point it at a development
+database only.
 
 ## Structure
 
@@ -219,3 +235,4 @@ Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/):
 - [ADR-0003 — Dependency direction between layers](docs/decisions/0003-direction-dependencies.md)
 - [ADR-0004 — Transactional semantics and data access ports](docs/decisions/0004-transactional-semantics.md)
 - [ADR-0005 — Event fan-out and destination subscription](docs/decisions/0005-event-fanout-and-subscription.md)
+- [ADR-0006 — Persistence mapping of the domain model](docs/decisions/0006-persistence-mapping.md)
