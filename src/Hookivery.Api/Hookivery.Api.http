@@ -1,5 +1,32 @@
-@Hookivery.Api_HostAddress = http://localhost:5034
+@baseUrl = http://localhost:5034
 
-Accept: application/json
+### Create
+# @name create
+POST {{baseUrl}}/api/v1/sources
+Content-Type: application/json
+
+{ "name": "Billing" }
 
 ###
+@id = {{create.response.body.$.id}}
+
+### List
+GET {{baseUrl}}/api/v1/sources?limit=10
+
+### Get
+GET {{baseUrl}}/api/v1/sources/{{id}}
+
+### Update
+PUT {{baseUrl}}/api/v1/sources/{{id}}
+Content-Type: application/json
+
+{ "name": "Billing v2", "isActive": true }
+
+### Deactivate
+DELETE {{baseUrl}}/api/v1/sources/{{id}}
+
+### Invalid (expect 400 ValidationProblem)
+POST {{baseUrl}}/api/v1/sources
+Content-Type: application/json
+
+{ "name": "   " }
