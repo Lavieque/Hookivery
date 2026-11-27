@@ -5,8 +5,8 @@ It receives events from producer systems, persists them in PostgreSQL, processes
 them to external destinations with retries, idempotency, a Dead Letter Queue, the Outbox Pattern, observability and
 Docker deployment.
 
-> **Status:** in development — solution foundation, PostgreSQL, EF Core, the domain model and its persistence
-> mappings with the initial migration are in place; global error handling with Problem Details is in place; the source management API is next.
+> **Status:** in development — solution foundation, PostgreSQL, EF Core, the domain model, its persistence
+> mappings and global error handling are in place; source management is available; destination management is next.
 
 ## Requirements
 
@@ -136,6 +136,18 @@ Errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457)
 and carry a `traceId` that matches the logs. Unexpected failures return `500` without exception details.
 See [ADR-0007](docs/decisions/0007-error-handling.md).
 
+## Sources API
+
+| Method | Route | Result |
+|---|---|---|
+| `POST` | `/api/v1/sources` | `201` with the signing secret — the only time it is returned |
+| `GET` | `/api/v1/sources?offset=0&limit=50` | `200`, `limit` between 1 and 100 |
+| `GET` | `/api/v1/sources/{id}` | `200` or `404` |
+| `PUT` | `/api/v1/sources/{id}` | `200` — replaces `name` and `isActive` |
+| `DELETE` | `/api/v1/sources/{id}` | `204` — deactivates the source; repeating it is harmless |
+
+The endpoints are not authenticated yet (TASK-036). See [ADR-0008](docs/decisions/0008-source-management-api.md).
+
 ## Running the tests
 
 The unit tests (domain rules) and the architecture tests (dependency rules between layers) need no database:
@@ -243,3 +255,4 @@ Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/):
 - [ADR-0005 — Event fan-out and destination subscription](docs/decisions/0005-event-fanout-and-subscription.md)
 - [ADR-0006 — Persistence mapping of the domain model](docs/decisions/0006-persistence-mapping.md)
 - [ADR-0007 — Global error handling with Problem Details](docs/decisions/0007-error-handling.md)
+- [ADR-0008 — Source management API](docs/decisions/0008-source-management-api.md)
