@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Hookivery.Infrastructure\Hookivery.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hookivery.IntegrationTests" />
+  </ItemGroup>
+
 </Project>
