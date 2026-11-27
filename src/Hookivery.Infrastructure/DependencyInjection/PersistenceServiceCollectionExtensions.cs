@@ -1,4 +1,6 @@
-﻿using Hookivery.Infrastructure.Persistence;
+using Hookivery.Application.Sources;
+using Hookivery.Infrastructure.Persistence;
+using Hookivery.Infrastructure.Persistence.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddDbContext<HookiveryDbContext>(options => options
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention());
+        services.AddScoped<ISourceRepository, SourceRepository>();
 
         return services;
     }

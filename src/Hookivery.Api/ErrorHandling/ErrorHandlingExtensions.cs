@@ -22,7 +22,7 @@ internal static class ErrorHandlingExtensions
     public static WebApplication UseErrorHandling(this WebApplication app)
     {
         app.UseExceptionHandler();
-        app.UseStatusCodePages();    
+        app.UseStatusCodePages();
         return app;
     }
 }
