@@ -6,7 +6,7 @@ them to external destinations with retries, idempotency, a Dead Letter Queue, th
 Docker deployment.
 
 > **Status:** in development — solution foundation, PostgreSQL, EF Core, the domain model and its persistence
-> mappings with the initial migration are in place; the source management API is next.
+> mappings with the initial migration are in place; global error handling with Problem Details is in place; the source management API is next.
 
 ## Requirements
 
@@ -130,6 +130,12 @@ dotnet run --project src/Hookivery.Worker
 
 In the `Development` environment, the API exposes the OpenAPI document at `/openapi/v1.json`.
 
+## Error responses
+
+Errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) (`application/problem+json`)
+and carry a `traceId` that matches the logs. Unexpected failures return `500` without exception details.
+See [ADR-0007](docs/decisions/0007-error-handling.md).
+
 ## Running the tests
 
 The unit tests (domain rules) and the architecture tests (dependency rules between layers) need no database:
@@ -236,3 +242,4 @@ Relevant decisions are recorded as ADRs in [`docs/decisions/`](docs/decisions/):
 - [ADR-0004 — Transactional semantics and data access ports](docs/decisions/0004-transactional-semantics.md)
 - [ADR-0005 — Event fan-out and destination subscription](docs/decisions/0005-event-fanout-and-subscription.md)
 - [ADR-0006 — Persistence mapping of the domain model](docs/decisions/0006-persistence-mapping.md)
+- [ADR-0007 — Global error handling with Problem Details](docs/decisions/0007-error-handling.md)
